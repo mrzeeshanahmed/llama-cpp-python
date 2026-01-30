@@ -28,18 +28,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install cibuildwheel==2.21.0
 
-            - name: Build manylinux wheels
+      - name: Build manylinux wheels
         env:
+          # build for Python 3.10 manylinux x86_64
           CIBW_BUILD: "cp310-manylinux_x86_64"
           CIBW_SKIP: "*-musllinux_*"
-          # Disable optional backends that break on Linux
+          # disable optional backends not supported in Linux build environment
           CMAKE_ARGS: "-DLLAMA_CUDA=off -DLLAMA_METAL=off -DLLAMA_OPENBLAS=on -DGGML_OPENBLAS=on"
           GGML_OPENBLAS: "1"
           GGML_CUDA: "0"
           GGML_METAL: "0"
         run: |
           python -m cibuildwheel --output-dir wheelhouse
-
 
       - name: Upload built wheels
         uses: actions/upload-artifact@v4
