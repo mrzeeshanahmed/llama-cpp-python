@@ -1,45 +1,36 @@
 name: Build manylinux wheel
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to click "Run" manually
   push:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
-  build:
+  build_wheels:
+    name: Build wheels on ubuntu-latest
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-
     steps:
-      - name: Checkout repository with submodules
-        uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: recursive  # <--- FIXES THE MISSING HEADER ERROR
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install cibuildwheel
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install cibuildwheel==2.21.0
-
-      - name: Build manylinux wheel
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21.3
         env:
+          # Build ONLY for Python 3.10 on Linux x86_64
           CIBW_BUILD: "cp310-manylinux_x86_64"
+          
+          # Skip musllinux (Alpine) to avoid the libc mismatch
           CIBW_SKIP: "*-musllinux_*"
-          # Disable backends not supported in Linux build
-          CMAKE_ARGS: "-DLLAMA_OPENBLAS=on"
-        run: |
-          python -m cibuildwheel --output-dir wheelhouse
+          
+          # Force CMake to use your new install logic
+          # -DGGML_BLAS=OFF ensures it runs on generic CPUs (like HF Spaces) without needing OpenBLAS installed
+          CIBW_ENVIRONMENT: CMAKE_ARGS="-DGGML_BLAS=OFF -DLLAMA_BUILD=ON -DCMAKE_BUILD_TYPE=Release"
 
-      - name: Upload built wheels
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: manylinux-wheel
-          path: wheelhouse/*.whl
+          name: python-wheels
+          path: ./wheelhouse/*.whl
