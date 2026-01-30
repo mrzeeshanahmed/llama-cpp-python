@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-    name: Build llama_cpp_python manylinux wheel
     runs-on: ubuntu-latest
 
     strategy:
@@ -15,8 +14,10 @@ jobs:
         python-version: ["3.10"]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with submodules
         uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,16 +29,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install cibuildwheel==2.21.0
 
-      - name: Build manylinux wheels
+      - name: Build manylinux wheel
         env:
-          # build for Python 3.10 manylinux x86_64
           CIBW_BUILD: "cp310-manylinux_x86_64"
           CIBW_SKIP: "*-musllinux_*"
-          # disable optional backends not supported in Linux build environment
-          CMAKE_ARGS: "-DLLAMA_CUDA=off -DLLAMA_METAL=off -DLLAMA_OPENBLAS=on -DGGML_OPENBLAS=on"
-          GGML_OPENBLAS: "1"
-          GGML_CUDA: "0"
-          GGML_METAL: "0"
+          # Disable backends not supported in Linux build
+          CMAKE_ARGS: "-DLLAMA_OPENBLAS=on"
         run: |
           python -m cibuildwheel --output-dir wheelhouse
 
