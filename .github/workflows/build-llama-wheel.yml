@@ -6,7 +6,7 @@ on:
 jobs:
   build_wheels:
     name: Build Wheel for Python 3.10 (Linux)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     
     steps:
       - name: Checkout repository
