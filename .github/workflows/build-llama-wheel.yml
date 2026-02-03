@@ -1,0 +1,50 @@
+name: Build Liquid-Ready Llama Wheel
+
+on:
+  workflow_dispatch: # Allows you to click "Run" manually
+
+jobs:
+  build_wheels:
+    name: Build Wheel for Python 3.10 (Linux)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10" 
+
+      - name: Install Build Dependencies (System)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake g++ libopenblas-dev pkg-config git
+
+      - name: Install Python Build Tools
+        run: pip install build wheel setuptools
+
+      - name: Checkout llama-cpp-python (Bleeding Edge)
+        run: |
+          # We clone main to get the absolute latest Liquid LFM support
+          git clone https://github.com/abetlen/llama-cpp-python.git
+          cd llama-cpp-python
+          # Optional: Checkout specific commit if you want reproducibility later
+          # git checkout <commit-hash> 
+
+      - name: Build Wheel with OpenBLAS
+        run: |
+          cd llama-cpp-python
+          # These flags match the HF Space CPU architecture
+          export CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_VENDOR=OpenBLAS"
+          export FORCE_CMAKE=1
+          
+          # Build the wheel
+          python3 -m build --wheel --no-isolation
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama_cpp_python_wheel
+          path: llama-cpp-python/dist/*.whl

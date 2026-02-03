@@ -3,9 +3,9 @@ requires = ["scikit-build-core[pyproject]>=0.9.2"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "llama_cpp_python"
-dynamic = ["version"]
-description = "Python bindings for the llama.cpp library"
+name = "llama_cpp_python_manylinux"
+version = "0.3.17.post1"
+description = "Pre-built manylinux wheel for llama_cpp_python (Linux X86_64, Python 3.10)"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
