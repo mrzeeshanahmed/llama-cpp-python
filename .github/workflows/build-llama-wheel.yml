@@ -1,7 +1,7 @@
 name: Build Liquid-Ready Llama Wheel
 
 on:
-  workflow_dispatch: # Allows you to click "Run" manually
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
   build_wheels:
@@ -17,34 +17,39 @@ jobs:
         with:
           python-version: "3.10" 
 
-      - name: Install Build Dependencies (System)
+      - name: Install System Build Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake g++ libopenblas-dev pkg-config git
 
-      - name: Install Python Build Tools
-        run: pip install build wheel setuptools
+      - name: Install Python Build Tools (Updated for Liquid Support)
+        run: |
+          # The Critical Fix: Installing scikit-build-core and ninja
+          pip install --upgrade pip
+          pip install build wheel setuptools scikit-build-core[pyproject] cmake ninja pathspec pyproject_metadata
 
       - name: Checkout llama-cpp-python (Bleeding Edge)
         run: |
-          # We clone main to get the absolute latest Liquid LFM support
-          git clone https://github.com/abetlen/llama-cpp-python.git
+          # Clone recursively to get the llama.cpp submodule
+          git clone --recursive https://github.com/abetlen/llama-cpp-python.git
           cd llama-cpp-python
-          # Optional: Checkout specific commit if you want reproducibility later
-          # git checkout <commit-hash> 
+          
+          # Optional: Pin to a specific commit if you want reproducibility
+          # git checkout <commit-hash>
 
       - name: Build Wheel with OpenBLAS
         run: |
           cd llama-cpp-python
-          # These flags match the HF Space CPU architecture
+          
+          # Force the flags for HF Space compatibility
           export CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_VENDOR=OpenBLAS"
           export FORCE_CMAKE=1
           
-          # Build the wheel
+          # Build using the 'build' module (modern standard)
           python3 -m build --wheel --no-isolation
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: llama_cpp_python_wheel
+          name: liquid_llama_cpp_python_wheel
           path: llama-cpp-python/dist/*.whl
